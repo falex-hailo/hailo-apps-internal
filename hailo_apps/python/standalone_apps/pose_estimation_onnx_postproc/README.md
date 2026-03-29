@@ -1,17 +1,20 @@
 Pose Estimation -  *yolo26* with lightweight onnx postprocessing
 ================================================================
 
-Similar to ../pose_estimation, adding and exemplifying the following capabilities:
+This example demonstrates pose estimation using a Hailo device. The example takes an input, performs inference using the HEF file + lightweight onnx postprocessing and draws the detection boxes, class type, confidence, keypoints and joints connection on the resized image. Supported input formats include images (.jpg, .jpeg, .png, .bmp), Video (.mp4), live camera feed.
+
+<p align="center">
+    <img src="output.gif" width="320" alt="Reflection-loop trail demo" />
+    <img src="output_aigym.gif" width="220" alt="AIGym trail demo" />
+</p>
+
+Similar to [baseline pose_estimation](https://github.com/falex-hailo/hailo-apps-internal/blob/yolo26_onnx/hailo_apps/python/standalone_apps/pose_estimation/README.md), adding and exemplifying the following capabilities:
 1. Using the new 2026 Ultralytics release of top performing, NMS-free networks. 
 1. Using onnx-runtime engine for the lightweight postprocessing, exemplifying this easy integration pathway.
 1. Adding demo variations exposing the applicative potential of high-quality high-speed pose estimation:
     1. Skeleton tracklet ("following shadow"), showcasing the "dense" (on time axis) recognitions unlocked by the high FPS.
     1. Integrating [Ultralytics' AIgym](https://docs.ultralytics.com/guides/workouts-monitoring/) - counting fitness exercise repetitions; showcasing the general action-recognition potential. Note that in practice it ONLY works smoothly with Hailo's acceleration; the 2-3FPS achievable on RPi CPU by using the smallest network are not sufficient for capturing reasonably fast movement. 
 
-<p align="center">
-    <img src="output.gif" width="320" alt="Reflection-loop trail demo" />
-    <img src="output_aigym.gif" width="220" alt="AIGym trail demo" />
-</p>
 
 
 
@@ -25,11 +28,13 @@ The variants currently supported include:
 
 ONNX postprocessing
 -------------------
-Similarly to hailo_apps/cpp/onnxrt_hailo_pipeline, this example uses onnxruntime for the postprocessing part.  This makes integration of new networks especially convenient, by following these steps:
+This example uses onnxruntime for the postprocessing part. It's somewhat similar to [hailo_apps/cpp/onnxrt_hailo_pipeline](https://github.com/hailo-ai/hailo-apps/tree/main/hailo_apps/cpp/onnxrt_hailo_pipeline) but in a stand-alone way, not within HaloRT. 
+ This makes integration of new networks especially convenient, by following these steps:
 1. Split the ONNX into the "neural processing" and the "postprocessing" parts using extract_postprocessing.py script
 2. Process the first part into a HEF using the DFC
 3. In runtime, apply the second part on the HEF outputs with onnx-runtime engine to complete an accelerated equivalent of the original ONNX. This runtime part is implemented and exemplified in this app.
-4. The desired "debug reference ONNX = HEF + postproc-onnx" equivalence can be tested by passing --neural-onnx-ref <path>, which bypasses HEF inference and feeds postprocessing from a user-provided reference ONNX model. This is useful for quick dry tests and for isolating pipeline-vs-compilation differences.
+4. The desired "full-onnx = HEF + postproc-onnx" equivalence can be conveniently debugged (isolating pipeline vs. compilation issues and HEF degradation) using --full-onnx flag that applies a bypass of the HEF (using the 'neural-processing' split-onnx 1st part). This is also useful for quick 'dry' tests without hardware or compilation at all - as well as benchmarking the acceleration provided by Hailo's offloading of the neural part to HEF running on hardware.
+
 
 Install and requirements
 ------------------------
@@ -51,7 +56,7 @@ Usage
   --mute-background ALPHA Dim the background image to emphasize pose skeletons. \
   --neural-onnx-ref ONNX_HEF_EQ_FILE  For debug or quality/speed benchmarking - use a 'neural ONNX' file (1st part of splitting - corresponding to the HEF) to bypass hardware and run reference hef-equivalent model on the host CPU via the onnx-runtime engine. 
   
-Examples:
+Examples of the extra demo functionality:
 
 [Note - exemplified for video but available for real-time feed with --i usb or --i rpi as in other apps]
 
